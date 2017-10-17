@@ -1,0 +1,73 @@
+---
+title: "HOMEWORK 4"
+author: "Peiru Wu"
+date: "October 8, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+my solution is as following:
+
+i:
+```{r}
+nets1617<-readLines("/Users/peiruwu/Desktop/5206/NetsSchedule.html")
+nets1617<-as.character(as.vector(nets1617))
+##a
+length(nets1617)
+##b
+sum(nchar(nets1617))
+##c
+max(nchar(nets1617))
+```
+ii:
+```{r}
+## boston plays first at Wed,October 26, and Chicago plays last, at Wed,April 12.
+```
+iii:
+```{r}
+## line 315 provides the date,opponent and time of first game;line 396 provides the the date, opponent and time of the final game
+```
+iv:
+```{r}
+date_express<-"[A-Z][a-z,]{3}[[:space:]][A-Z][a-z]{2}[[:space:]][0-9]+"
+grep(nets1617,pattern = date_express)
+
+length(grep(nets1617,pattern = date_express))
+nets1617[315]
+nets1617[396]
+##they do match what we find in ii
+```
+v:
+```{r}
+
+date <- regmatches(nets1617,(regexpr(nets1617,pattern = date_express)))
+date
+```
+vi:
+```{r}
+time_express<-"[0-9][[:punct:]][0-9]{2}[[:space:]][A-Z]{2}"
+time <- regmatches(nets1617,(regexpr(nets1617,pattern = time_express)))
+time
+```
+vii:
+```{r}
+home_express<-"[[:punct:]]game-status[[:punct:]]{2}[@]?[v]?[s]?" 
+home<-regmatches(nets1617,(regexpr(nets1617,pattern = home_express)))
+home<-substr(home,15,nchar(home))
+home
+```
+viii:
+```{r}
+opponent_express<-"[A-Z]+[a-z]{0,6}[[:space:]]?[A-Z]?[a-z]*[[:punct:]]{2}[a][[:punct:]]{3}[l][i][[:punct:]]{3}[u][l][[:punct:]]{3}[t][d]"
+opponent<-regmatches(nets1617,regexpr(nets1617,pattern = opponent_express))
+opponent<-substr(opponent,1,nchar(opponent)-18)
+opponent
+```
+ix:
+```{r}
+game<-data.frame(date,time,home,opponent)
+head(game,10)
+##it does match the first 10 games in web browser
+```

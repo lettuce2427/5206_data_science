@@ -1,0 +1,123 @@
+---
+title: "5206_HW4"
+author: "Peiru Wu"
+date: "October 16, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+my solution to the question is as following:
+
+i:
+```{r}
+setwd("/Users/peiruwu/Desktop/5206")
+gmp<-read.table("gmp.txt",header = T)
+gmp$pop<-round(gmp$gmp/gmp$pcgmp)
+head(gmp$pop)
+
+plot(gmp$pop,gmp$pcgmp,log="x",xlab="population",ylab="per-capita GMP")
+curve(6611*x^{1/8},add=T,col="blue")
+curve(6611*x^{0.1},add=T,col="red")
+curve(6611*x^{0.15},add=T,col="yellow")
+```
+
+ii:
+```{r}
+mse<-function(beta,X=gmp$pop,Y=gmp$pcgmp ){
+  fit<-sum((Y-beta[1]*X^beta[2])^2)/length(X)
+  return(fit)
+}
+mse(c(6611, 0.15))
+mse(c(5000, 0.10))
+```
+iii:
+```{r,warning=FALSE}
+nlm(mse, c(6611,1/8))
+nlm(mse, c(6611,1/8))
+nlm(mse, c(6611,1/8))
+nlm(mse, c(6611,0.15))
+nlm(mse, c(5000,0.10))
+nlm(mse, c(6611,1/8))$estimate
+```
+iv:
+```{r,warning=FALSE}
+plm<-function(beta0=6611,beta1=0.1,X=gmp$pop,Y=gmp$pcgmp){
+  
+  beta0=nlm(mse,c(beta0,beta1),X,Y)$estimate[1]
+  beta1=nlm(mse,c(beta0,beta1),X,Y)$estimate[2]
+  tip<-list(beta0,beta1,nlm(mse,c(beta0,beta1),X,Y)$minimum)
+  return(tip)
+}
+plm(6611,0.15)
+plm(5000,0.10)
+
+##they are different because of the limitation of iteration.beta0=6611,beta1=0.15 have less minimization
+```
+v:
+```{r}
+##a
+mean(gmp$pcgmp)
+sd(gmp$pcgmp)
+sqrt(sum((gmp$pcgmp-mean(gmp$pcgmp))^2))/length(gmp$pcgmp)
+#b
+mean_byindex<-function(indices){
+  indices=c(1:length(gmp$pcgmp))
+  return(mean(gmp$pcgmp[indices])) 
+}
+mean_byindex(c(1,5,1,3))
+#c
+
+bootstrap.means<-vector(length = 100)
+for (b in 1:100) {
+  new_sample <- sample(c(1:length(gmp$pcgmp)), size = length(gmp$pcgmp), replace = TRUE)
+  }  
+mean_byindex(new_sample)  
+#d
+sqrt(sum((gmp$pcgmp-mean_byindex(new_sample))^2))/length(gmp$pcgmp)
+#they are basically matched 
+  
+```
+vi:
+```{r,warning=FALSE}
+plm.bootstrap<-function(B=100,beta0=5000,beta1=0.10,X=gmp$pop,Y=gmp$pcgmp){
+ 
+  betaa0<-vector(length=100)
+  betaa1<-vector(length = 100)
+  for (b in 1:B) {
+    indices<-sample(1:length(X),size = length(X),replace = TRUE)
+    
+  new_pop<-X[indices]
+  new_pcgmp<-Y[indices]
+   betaa0[b]=plm(beta0,beta1,X=new_pop,Y=new_pcgmp)[[1]]
+   betaa1[b]=plm(beta0,beta1,X = new_pop,Y=new_pcgmp)[[2]]
+  }
+  
+ se_beta0<-sqrt(sum(betaa0-mean(betaa0))^2)/length(betaa0)
+  se_beta1<-sqrt(sum(betaa1-mean(betaa1))^2)/length(betaa1)
+  
+ return(list(se_beta0,se_beta1))
+}
+
+plm.bootstrap(beta0=6611,beta1=0.15)
+plm.bootstrap(beta0=5000,beta1 = 0.10)
+
+```
+vii:
+```{r,warning=FALSE}
+gmp13<-read.table("gmp-2013.txt")
+head(gmp13)
+gmp13$pop<-round(gmp13$gmp/gmp13$pcgmp)
+
+plm(gmp13$pop,gmp13$pcgmp)
+plm.bootstrap(B=100,beta0=5000,beta1=0.10,X=gmp13$pop,Y=gmp13$pcgmp)
+## the parameter of the model changed
+
+
+
+```
+

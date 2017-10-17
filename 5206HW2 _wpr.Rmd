@@ -1,0 +1,100 @@
+---
+title: "5206HW2"
+author: "Peiru Wu"
+date: "September 29, 2016"
+output: html_document
+---
+
+```{r setup, include=FALSE}
+```
+my solution to the question Part1 is as following:
+i:
+```{r}
+housing <- read.csv("/Users/peiruwu/Downloads/NYChousing.csv")
+
+```
+ii:
+```{r}
+nrow(housing)
+ncol(housing)
+```
+iii:
+```{r}
+apply(is.na(housing),2,sum)
+##this shows the number of empty numbers in each attribute,2 means we will count by column.
+```
+iv:
+```{r}
+housing2 <-housing[!is.na(housing$Value),]
+nrow(housing2)
+
+removeddata <- nrow(housing) - nrow(housing2)
+removeddata
+```
+v:
+```{r}
+## this does agree with the result from iii,which is 52.
+```
+vi:
+```{r}
+logValue <- log(housing2$Value)
+
+mean(logValue)
+min(logValue)
+max(logValue)
+median(logValue)
+```
+vii:
+```{r}
+logUnits <- log(housing2$UnitCount)
+head(logUnits)
+
+```
+viii:
+```{r}
+after1950 <- (housing2$YearBuilt >= 1950)
+head(after1950)
+```
+
+
+my solution of Part2 is as following:
+i:
+```{r}
+plot(logValue,logUnits,xlab = "logunits",ylab = "logvalue")
+```
+ii:
+```{r}
+plot(logValue,col=factor(after1950),logUnits)
+##color is used to seperate different data point between after1950 and else.
+```
+iii:
+```{r}
+cor(logValue,logUnits)
+cor(logValue[housing2$Borough=="Brooklyn"],logUnits[housing2$Borough=="Brooklyn"])
+cor(logValue[housing2$Borough=="Manhattan"],logUnits[housing2$Borough=="Manhattan"])
+cor(logValue[after1950],logUnits[after1950])
+cor(logValue[after1950==F],logUnits[after1950==F])
+```
+iv:
+```{r}
+plot(logValue[housing2$Borough=="Brooklyn"],logUnits[housing2$Borough=="Brooklyn"])
+plot(logValue[housing2$Borough=="Manhattan"],logUnits[housing2$Borough=="Manhattan"])
+```
+v:
+```{}
+med.value <- median(housing$Value[housing$Borough=="Manhattan"],na.rm=T)
+med.value
+```
+vi:
+```{r}
+boxplot(logValue~Borough,data = housing2,ylab="Value",xlab="Borough")
+```
+vii:
+```{r}
+mean(housing2$Value[housing2$Borough=="Bronx"],na.rm=T)
+mean(housing2$Value[housing2$Borough=="Brooklyn"],na.rm=T)
+mean(housing2$Value[housing2$Borough=="Manhattan"],na.rm=T)
+mean(housing2$Value[housing2$Borough=="Queens"],na.rm=T)
+mean(housing2$Value[housing2$Borough=="Staten Island"],na.rm=T)
+```
+

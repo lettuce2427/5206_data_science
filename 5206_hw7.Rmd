@@ -1,0 +1,266 @@
+---
+title: "5206_hw7"
+author: "Peiru Wu"
+date: "November 11, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r cars}
+#install.packages("combinat")
+require("combinat")
+
+poisLoglink<-function(lamda,data){
+  f<-rep(NA,length(data))
+  for (i in 1:length(data)){
+  f[i]<-log((lamda^data[i])*exp(-lamda)/length(permn(data[i])))
+  }
+  return(sum(f))
+}
+poisLoglink(lamda = 1,data = c(1,0,0,1,1))
+```
+ii
+```{r}
+setwd("/Users/peiruwu/Desktop/5206")
+moretti<-read.csv("moretti.csv")
+head(moretti)
+count_new_genres<-function(year){
+  genre<-0
+  for(i in 1:nrow(moretti)){
+    if (year>=moretti$Begin[i] & year<=moretti$End[i]){
+      genre=genre+1
+    }
+  }
+  return(genre)
+}
+count_new_genres(1803)
+count_new_genres(1850)
+```
+iii
+```{r}
+new_genres<-rep(NA,1900-1740+1)
+for(i in 1740:1900){
+  new_genres[i-1739]<-sum(moretti$Begin==i)
+}
+new_genres[1803-1739]#1803,the postion is 1803-1739=64
+new_genres[1850-1739]#1850,the postion is 1850-1739=111
+```
+iv
+```{r}
+lambda=1:5000/1000
+y<-rep(NA,length(lambda))
+for(i in 1:5000){
+y[i]<-poisLoglink(lamda = lambda[i],data = new_genres)
+}
+poisLoglink(lamda=lambda[273],data = new_genres)==max(y)#the maxmum is at 0.273
+plot(x=lambda,y=y,main = "Plot poisLoglik as a function of lamda on the new genres data")
+```
+v.
+```{r}
+lambda<-0.273
+neg_poisLoglik<-function(lambda,data){
+  l<--sum(data*log(lambda)-lambda-log(gamma(data+1)))
+  return(l)
+}
+nlm(neg_poisLoglik,lambda,data=new_genres)$estimate
+```
+
+vi. 
+```{r}
+intergenre_intervals<-diff(moretti[,"Begin"])
+mean(intergenre_intervals)
+
+sd(intergenre_intervals)
+
+sd(intergenre_intervals)/mean(intergenre_intervals)
+
+```
+
+vii.
+(a)
+```{r}
+intervals<-function(new_genres){
+  names(new_genres)<-1:length(new_genres)
+  new<-new_genres[new_genres!=0]
+  new_year<-as.numeric(names(new))
+  intergenre_intervals<-c()
+    if(new[1]!=1){intergenre_intervals<-rep(0,new[1]-1)}
+  for (i in 2:length(new)) {
+    if(new[i]==1){
+      intergenre_intervals<-c(intergenre_intervals,new_year[i]-new_year[i-1])
+    }else{
+      intergenre_intervals<-c(intergenre_intervals,new_year[i]-new_year[i-1],rep(0,new[i]-1))
+    }
+  }
+  return(intergenre_intervals)
+}
+intervals(new_genres)
+```
+(b)
+```{r}
+pois.simulation<-function(yeanum,genmea){
+  x<-rpois(yeanum,genmea)
+  a<-intervals(x)
+  l<-list(vector=a,coef_of_variation=sd(a)/mean(a),mean=mean(a))
+  return(l)
+}
+pois.simulation(141,0.273)
+```
+viii.
+```{r}
+vec<-c()
+for (i in 1:100000) {
+  vec<-c(vec,pois.simulation(141,0.273)[[2]])
+}
+coe<-sd(intergenre_intervals)/mean(intergenre_intervals)
+mean(vec>coe)
+```
+ix.
+```{r}
+#This tells us ??? genres tend to appear together in burst.
+```
+Part 2
+x.    
+```{r}
+lambdamle<-c()
+for (i in 1:16) {
+  lambdamle[i]<-sum(moretti$Begin>=1740+10*(i-1)&moretti$Begin<=1749+10*(i-1))/10
+}
+lambdamle
+```
+xi.
+(a)
+```{r}
+piorx <- 0:1000/1000
+piory <- dgamma(0:1000/1000, shape=2, scale=0.1)
+plot(piorx, piory, xlab="x", ylab = "density", main = "density function - gamma(shape=2, scale=0.1")
+```
+(b)
+```{r}
+names(piory) <- 0:1000/1000
+initial <- function(){
+  return(rgamma(1, shape = 2, scale = 0.1))
+}
+```
+(c)
+```{r}
+proposal <- function(lambda){
+  a <- lambda
+  b <- lambda+rnorm(1, mean=0, sd=0.001)
+  if(b >0){
+    return(b)
+  }else{
+    return(a)
+  }
+}
+```
+(d)
+```{r}
+posterior <- function(lambda, data){
+  a <- exp(sum(log(lambda^data*exp(-lambda)/gamma(data+1))))*dgamma(lambda, shape=2, scale=0.1)
+  return(a)
+}
+posterior(lambda=0.2, data=new_genres)
+```
+(e)
+```{r}
+new_genres12 <- new_genres[121:130]
+metrostep <- function(x) {
+  z <- proposal(x)
+  u <- runif(1)
+  ratio <- posterior(z, new_genres12)/posterior(x, new_genres12)
+  if(u < ratio) {
+    accepted.val <- z
+  } else {
+    accepted.val <- x
+  }
+  return(accepted.val)
+  }
+n <- 100000
+vals <- vector(length = n)
+vals[1] <- initial()
+for (t in 2:n) {
+  vals[t] <- metrostep(vals[t-1])
+}
+mean(tail(vals, 90000))
+sd(tail(vals, 90000))
+mean(vals)-mean(tail(vals, 90000))
+sd(vals)-sd(tail(vals, 90000))
+```
+(f)
+```{r}
+hist(tail(vals, 90000), prob=T, ylab="density", 
+     xlab = "value of lambda", main = "simulations for 1850-1859")
+```
+xii. 
+(a)
+```{r}
+proposal <- function(lambda){
+  a <- lambda
+  b <- lambda+rnorm(16, mean=0, sd=0.001)
+  value <- vector(length=16)
+  for(i in 1:16){
+   if(b[i] > 0){
+      value[i] <- b[i]
+   }else{
+      value[i] <- a[i]
+    }
+  }
+return(value)  
+}
+
+```
+(b)
+```{r}
+posterior <- function(lambda, data){
+  lambda_use <- vector(length=160)
+  for(i in 1:16){
+    lambda_use[(10*i-9):(10*i)] <- rep(lambda[i], 10)
+  }
+  a <- exp(sum(log(lambda_use^data*exp(-lambda_use)/gamma(data+1))))*exp(sum(log(dgamma(lambda, shape=2, scale=0.1))))
+  return(a)
+}
+posterior(lambda=rep(0.2, 16), data=new_genres[1:160])
+```
+(c)
+```{r}
+new_genres <- new_genres[1:160]
+initial <- function() {
+return(rgamma(16, shape = 2, scale = 0.1))
+}
+metrostep <- function(x) {
+  z <- proposal(x)
+  u <- runif(1)
+  ratio <- posterior(z, new_genres)/posterior(x, new_genres)
+  if(u < ratio) {
+    accepted.val <- z
+  } else {
+    accepted.val <- x
+  }
+  return(accepted.val)
+}
+n <- 100000
+vals <- matrix(NA, nrow = n, ncol = 16)
+vals[1,] <- initial()
+for (t in 2:n) {
+  vals[t, ] <- metrostep(vals[t-1, ])
+}
+vals_use <- tail(vals, 90000)
+apply(vals_use, 2, mean)
+apply(vals_use, 2, sd)
+```
+(d)
+```{r}
+boxplot(vals_use,outline = FALSE)
+points(x=1:16,y=lambdamle,col="red")
+
+```

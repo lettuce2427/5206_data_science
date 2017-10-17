@@ -1,0 +1,75 @@
+---
+title: "5206_HW10b"
+author: "Peiru Wu"
+date: "December 10, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(plyr)
+library(dplyr)
+setwd("/Users/peiruwu/Desktop/5206")
+debt <- read.csv("debt.csv", as.is = TRUE)
+attach(debt)
+```
+1
+```{r}
+#a
+debt.France<-subset(debt,Country=="France")
+dim(debt.France)
+#b
+debt.France$next.growth <- ifelse((lead(debt.France$Year) - debt.France$Year) ==1, lead(debt.France$growth), NA)
+signif(debt.France$next.growth[debt.France$Year==1971],3)
+debt.France$next.growth[debt.France$Year==1972]
+```
+
+2
+```{r}
+next1<-function(df){
+  n<-nrow(df)
+  n.growth<-rep(NA,n)
+  for(i in 1:n){
+    if(sum(df$Year==(df$Year[i]+1))>0){
+    n.growth[i]<-df$growth[df$Year==(df$Year[i]+1)]
+    }
+  
+  else{
+    n.growth[i]<-NA
+  }
+  }
+  df$next.growth<-n.growth
+  return(df)
+}
+debt<-ddply(debt,.(Country),next1)
+debt$next.growth[debt$Country=="France" & debt$Year==2009]
+```
+
+3
+```{r}
+plot(ratio,debt$next.growth)
+abline(lm(debt$next.growth~ratio),col="red")
+signif(coef(lm(debt$next.growth~ratio)),3)
+#the intercept is less and the slope is more horizantal
+```
+
+4
+```{r}
+plot(growth,debt$next.growth)
+abline(lm(debt$next.growth~growth),col="red")
+signif(coef(lm(debt$next.growth~growth)),3)
+#i think current debt ratio is a better predictor
+```
+
+
+
+

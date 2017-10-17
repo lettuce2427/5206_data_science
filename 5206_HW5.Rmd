@@ -1,0 +1,118 @@
+---
+title: "Untitled"
+author: "Peiru Wu"
+date: "October 28, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. 
+
+my solution to the Part 1 is as following:
+```{r,warning=FALSE}
+data<-read.csv("wtid-report.csv")
+rich_data<-data[,2:5]
+colnames(rich_data)<-c("Year","P99","P99.5","P99.9")
+#i
+p99<-rep(NA,689)
+p99.5<-rep(NA,689)
+p99.9<-rep(NA,689)
+percentile_ratio_discrepancies<-function(a,p99,p99.5,p99.9){
+ x<-(((p99/p99.9)^(-a+1)-10)^2+((p99.5/p99.9)^(-a+1)-5)^2+((p99/p99.5)^(-a+1)-2)^2)
+  return(x)
+}
+percentile_ratio_discrepancies(p99=1e6, p99.5=2e6, p99.9=1e7, a = 2)
+```
+ii
+```{r,warning=F}
+exponent.multi_ratios_est<-function(p99,p99.5,p99.9){
+  a <- 1 - (log(10)/log(p99/p99.9))
+  f<-nlm(percentile_ratio_discrepancies,a,p99,p99.5,p99.9)$estimate
+  return(f)
+}
+ exponent.multi_ratios_est(p99=1e6,p99.5=2e6,p99.9=1e7)
+```
+iii
+```{r}
+exponent.est_ratio_all_est<-function(rdata=rich_data,a.all=rep(NA,nrow(rdata))){
+  for (i in 1:nrow(rdata)){
+  a.all[i]<-exponent.multi_ratios_est(p99 = rdata$P99[i],p99.5 = rdata$P99.5[i],p99.9 = rdata$P99.9[i])
+}
+ return(a.all)
+}
+rich_data$a<-exponent.est_ratio_all_est(rdata = rich_data)
+library(ggplot2)
+ggplot(data = rich_data)+
+  geom_point(mapping = aes(x=Year,y=a))
+```
+iv
+```{r,warning=FALSE}
+a.compare<-1-log(10)/log(rich_data$P99/rich_data$P99.9)
+ggplot(data = rich_data)+
+  geom_point(mapping = aes(x=Year,y=a,color="red"))+
+  geom_point(mapping = aes(x=Year,y=a.compare,color="blue"))
+#the estimates in q4 is very similar but a little bit different from the estimate in q3. in larger estimates, q4 is bigger than q3,and in smaller estimates, q4 is smaller than q3. 
+```
+my solution to part2 is as following:
+```{r}
+rich_other_countries<-read.csv("WTID-SELFDOWNLOAD.csv",header = T)
+rich_other_country<-na.omit(rich_other_countries)
+rich_Canada_est<-rich_other_country[rich_other_country$Country=="Canada",]
+rich_China_est<-rich_other_country[rich_other_country$Country=="China",]
+rich_Columbia_est<-rich_other_country[rich_other_country$Country=="Colombia",]
+rich_Germany_est<-rich_other_country[rich_other_country$Country=="Germany",]
+rich_Italy_est<-rich_other_country[rich_other_country$Country=="Italy",]
+rich_Japan_est<-rich_other_country[rich_other_country$Country=="Japan",]
+rich_South.Africa_est<-rich_other_country[rich_other_country$Country=="South Africa",]
+rich_Sweden_est<-rich_other_country[rich_other_country$Country=="Sweden",]
+#V
+head(exponent.est_ratio_all_est(rdata=rich_Canada_est))
+head(exponent.est_ratio_all_est(rdata=rich_China_est))
+head(exponent.est_ratio_all_est(rdata=rich_Columbia_est))
+head(exponent.est_ratio_all_est(rdata=rich_Italy_est))
+head(exponent.est_ratio_all_est(rdata=rich_Japan_est))
+head(exponent.est_ratio_all_est(rdata=rich_Sweden_est))
+```
+vi
+```{r}
+ggplot(data=rich_other_country)+
+  geom_point(mapping = aes(x=rich_other_country$Year,y=exponent.est_ratio_all_est(rdata = rich_other_country),color=rich_other_country$Country))
+```
+vii
+```{r,warning=FALSE}
+ggplot(data = rich_other_countries)+
+  geom_point(mapping = aes(x=rich_other_countries$Year,y=rich_other_countries$Average.income.per.tax.unit,color=rich_other_countries$Country))
+```
+viii
+```{r}
+rich_United.States_est<-rich_other_country[rich_other_country$Country=="United States",]
+ggplot(data = rich_United.States_est)+
+  geom_point(mapping = aes(x=rich_United.States_est$Average.income.per.tax.unit,y=exponent.est_ratio_all_est(rdata = rich_United.States_est)))
+#the plot says something opposite from the "U-curve" hypothesis.
+```
+ix
+```{r}
+lm(exponent.est_ratio_all_est(rdata = rich_United.States_est)~rich_United.States_est$Average.income.per.tax.unit+I((rich_United.States_est$Average.income.per.tax.unit)^2))
+#the coefficients are not consistent with the coefficients 
+```
+x
+```{r}
+test<-function(tdata=rich_China_est){
+  coeffi<-lm(exponent.est_ratio_all_est(rdata = tdata)~tdata$Average.income.per.tax.unit+I((tdata$Average.income.per.tax.unit)^2))
+  return(coeffi)
+}
+test(tdata = rich_China_est)
+test(tdata = rich_Sweden_est)
+test(tdata = rich_Japan_est)
+test(tdata = rich_Italy_est)
+test(tdata = rich_Columbia_est)
+test(tdata = rich_Canada_est)
+#China, Japan, Columbia
+```

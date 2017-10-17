@@ -1,0 +1,85 @@
+---
+title: "5206_hw10a"
+author: "Peiru Wu"
+date: "December 9, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+```{r}
+library(plyr)
+setwd("/Users/peiruwu/Desktop/5206")
+debt <- read.csv("debt.csv", as.is = TRUE)
+dim(debt)
+attach(debt)
+head(debt)
+```
+
+
+1
+```{r}
+#a
+mean.growth<-function(data=debt){
+  return(mean(data$growth))
+}
+#b
+growth.mean_country<-signif(daply(debt,.(Country),mean.growth),3)
+growth.mean_country
+```
+
+2
+```{r}
+growth.mean_year<-signif(daply(debt,.(Year),mean.growth),3)
+growth.mean_year
+year<-unique(Year)
+plot(year,growth.mean_year)
+```
+
+3
+```{r}
+#a
+signif(cor(growth,ratio),3)
+#b
+cor_country<-function(data=debt){
+  return(signif(cor(data$growth,data$ratio),3))
+}
+cor.debt_country<-signif(daply(debt,.(Country),cor_country),3)
+cor.debt_country
+hist(cor.debt_country)
+signif(mean(cor.debt_country),3)
+#c
+cor.debt_year<-signif(daply(debt,.(Year),cor_country),3)
+cor.debt_year
+hist(cor.debt_year)
+signif(mean(cor.debt_year),3)
+#d
+#there are some countries and years where correlation goes against the general trend because thought most correlation are around -0.2, there are some others have a correlation of positive or less than -0.6
+```
+4
+```{r}
+
+model1<-lm(growth~ratio)
+signif(coef(model1),3)
+plot(ratio,growth)
+abline(model1,col="red")
+```
+5
+```{r}
+
+country<-unique(Country)
+country[cor.debt_country<(-0.5)]
+par(mfrow=c(2,2))
+plot(ratio[Country=="France"],growth[Country=="France"],main = "France",xlab = "ratio",ylab = "growth")
+plot(ratio[Country=="Germany"],growth[Country=="Germany"],main = "Germany",xlab = "ratio",ylab = "growth")
+plot(ratio[Country=="Italy"],growth[Country=="Italy"],main = "Italy",xlab = "ratio",ylab = "growth")
+plot(ratio[Country=="Japan"],growth[Country=="Japan"],main = "Japan",xlab = "ratio",ylab = "growth")
+```

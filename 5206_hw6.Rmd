@@ -1,0 +1,148 @@
+---
+title: "5206_hw6"
+author: "Peiru Wu"
+date: "November 5, 2016"
+output: pdf_document
+---
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## R Markdown
+
+This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+
+When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+
+
+My solution to part1 is as following:
+```{r}
+#1
+a.hat=2.654
+f<-function(x,a=a.hat,xmin=407760){
+  if (x<xmin){
+    print("take a bigger x")
+  }
+  else{
+  result<-((x/xmin)^(-a))*((a-1)/xmin)
+  return(result)
+  }
+}
+curve(f,from = 407760,to=1000000)
+#2
+upper.income<-function(u,a=a.hat,xmin=407760){
+  result<-(1-u)^(1/(-a+1))*xmin
+  return(result)
+}
+upper.income(u=0.5)
+#3
+n<-1000
+u<-runif(n)
+hist(upper.income(u),prob = T,breaks = 50,ylab = "density")
+#4
+median(upper.income(u))
+P.m<-.5^(1/(-a.hat+1))*407760
+P.m
+#the Pareto median is larger
+```
+Part 2
+```{r}
+#5
+f<- function(x){
+  y <- ifelse(x>=-1&x<=2,1/9*(4-x^2),0)
+  return(y)
+}
+x<-seq(-3,3,length=100)
+plot(x,f(x),type = "l")
+#6
+f.max <- 4/9
+g <- 1/3
+e <- function(x){ifelse(x>=-1&x<=2,3*g*f.max,Inf)}
+#7
+n.samps <- 1000
+n <- 0
+samps <- numeric(n.samps)
+while(n<n.samps){
+  y<-runif(1,min=-1,max=2)
+  u<-runif(1)
+  if(u<f(y)/e(y)){
+    n<-n+1
+    samps[n]<-y
+  }
+}
+#8
+hist(samps,prob = T,ylab = "f(x)",xlab = "x",main = "Histogram")
+x<-seq(-1,2,length=100)
+lines(x,f(x),lty=2)
+```
+Part 3
+```{r}
+#9
+x<-5
+x.vals<-NULL
+i<-0
+while (x>0) {
+  x.vals[i]<-x
+  r<-runif(1,min=-2,max=1)
+  x<-x+r
+  i<-i+1
+}
+#10
+num.step<-length(x.vals)
+plot(0:num.step,c(5,x.vals),type = "o",xlab = "iteration number",ylab = "random walk value",main = "random walk")
+#11
+random.walk<-function(x.start=5,plot.walk=TRUE){
+  x <- x.start
+  x.vals<-NULL
+  i<-0
+  while (x.start>0) {
+  x.vals[i]<-x.start
+  r<-runif(1,min=-2,max=1)
+  x.start<-x.start+r
+  i<-i+1
+  }
+  num.step<-length(x.vals)
+  if(plot.walk==TRUE){
+    plot(0:num.step,c(x,x.vals),type = "o",xlab = "iteration number",ylab = "random walk value",main = "random walk")
+    }
+  return(list(c(x,x.vals),num.step))
+}
+random.walk(5)
+random.walk(10)
+#12
+rw <- NULL ##a vector records num.step 
+for (i in 1:10000) {
+  rw[i]<-random.walk(plot.walk = FALSE)[[2]]
+}
+ave.num<-mean(rw)
+ave.num
+#13
+random.walk<-function(x.start=5,plot.walk=TRUE,seed=NULL){
+  x <- x.start
+  if(!is.null(seed)){set.seed(seed)}  ##set the seed in the beginning
+  x.vals<-NULL
+  i<-0
+  while (x.start>0) {
+  x.vals[i]<-x.start
+  r<-runif(1,min=-2,max=1)
+  x.start<-x.start+r
+  i<-i+1
+  }
+  num.step<-length(x.vals)
+  if(plot.walk==TRUE){
+    plot(0:num.step,c(x,x.vals),type = "o",xlab = "iteration number",ylab = "random walk value",main = "random walk")
+    }
+  return(list(c(x,x.vals),num.step))
+}
+random.walk(plot.walk=FALSE)
+random.walk(plot.walk=FALSE) #different
+random.walk(plot.walk=FALSE,seed=33)
+random.walk(plot.walk=FALSE,seed=33) #same
+```
+
+
+
+
+
+
